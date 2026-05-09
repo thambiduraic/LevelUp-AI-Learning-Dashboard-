@@ -1,0 +1,95 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  supabaseId String   @unique
+  name       String
+  email      String   @unique
+  image      String?
+  level      Int      @default(1)
+  totalXP    Int      @default(0)
+  streak     Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  settings   Json?    @default("{}")
+
+  quests     Quest[]
+
+  skills     Skill[]
+  xpHistory  XPHistory[]
+  aiInsights AIInsight[]
+}
+
+model Quest {
+  id          String     @id @default(cuid())
+  title       String
+  description String
+  xpReward    Int
+  difficulty  Difficulty @default(MEDIUM)
+  completed   Boolean    @default(false)
+  completedAt DateTime?
+  resetDate   DateTime   @default(now())
+  createdAt   DateTime   @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Skill {
+  id       String   @id @default(cuid())
+  name     String
+  category Category
+  progress Int      @default(0)
+  unlocked Boolean  @default(false)
+  xpRequired Int    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+}
+
+
+model XPHistory {
+  id        String   @id @default(cuid())
+  amount    Int
+  source    String
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AIInsight {
+  id        String   @id @default(cuid())
+  feedback  String
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum Category {
+  FRONTEND
+  BACKEND
+  AI_ML
+  SYSTEM_DESIGN
+  PROBLEM_SOLVING
+}
