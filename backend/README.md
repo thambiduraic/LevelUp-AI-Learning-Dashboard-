@@ -70,6 +70,22 @@ The API will be available at [http://localhost:5000](http://localhost:5000).
 - `POST /api/ai/mentor`: Generate personalized AI feedback.
 - `GET /api/ai/insights`: Fetch history of AI feedback sessions.
 
+## 🚀 Deployment (Render)
+
+The backend is fully configured to be deployed on [Render.com](https://render.com) as a Web Service.
+
+### Deployment Steps:
+1. Create a new **Web Service** on Render.
+2. Connect your GitHub repository.
+3. Configure the following settings:
+   - **Environment**: `Node`
+   - **Build Command**: `npm install && npm run build`
+   - **Start Command**: `npm start`
+4. Add all the required Environment Variables from your `.env` file to the Render dashboard. Make sure to update the `FRONTEND_URL` to point to your deployed Vercel frontend.
+5. Click **Deploy Web Service**.
+
+---
+
 ## 📁 Project Structure
 - `/src/routes`: API route definitions
 - `/src/middleware`: Auth and validation middleware
