@@ -52,3 +52,15 @@ export function categoryLabel(category: string): string {
     default: return category;
   }
 }
+
+/** Get the base site URL for redirects */
+export const getURL = () => {
+  let url = (process?.env?.NEXT_PUBLIC_SITE_URL ?? process?.env?.NEXT_PUBLIC_VERCEL_URL) as string;
+  
+  if (url) {
+    url = url.startsWith('http') ? url : `https://${url}`;
+    url = url.endsWith('/') ? url : `${url}/`;
+  }
+  
+  return url || '';
+};
