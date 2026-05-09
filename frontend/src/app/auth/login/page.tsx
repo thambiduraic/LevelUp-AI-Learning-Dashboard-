@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, Zap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { getURL } from '@/lib/utils';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,7 +38,7 @@ export default function LoginPage() {
     setGoogleLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${getURL()}auth/callback` },
+      options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback` },
     });
     if (error) {
       setError(error.message);
