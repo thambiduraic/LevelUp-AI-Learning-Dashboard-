@@ -11,38 +11,19 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
+        getAll() {
+          return request.cookies.getAll();
         },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          });
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
           supabaseResponse = NextResponse.next({
             request,
           });
-          supabaseResponse.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          supabaseResponse.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
         },
       },
     }
@@ -66,13 +47,27 @@ export async function middleware(request: NextRequest) {
     url.pathname = '/auth/login';
     // Preserve the original destination
     url.searchParams.set('next', pathname);
-    return NextResponse.redirect(url);
+    
+    // IMPORTANT: When redirecting, we must include any refreshed cookies from Supabase
+    const response = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      const { name, value, ...options } = cookie;
+      response.cookies.set(name, value, options);
+    });
+    return response;
   }
 
   if (isAuthRoute && user && !pathname.startsWith('/auth/callback')) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
+    
+    // IMPORTANT: When redirecting, we must include any refreshed cookies from Supabase
+    const response = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      const { name, value, ...options } = cookie;
+      response.cookies.set(name, value, options);
+    });
+    return response;
   }
 
   return supabaseResponse;

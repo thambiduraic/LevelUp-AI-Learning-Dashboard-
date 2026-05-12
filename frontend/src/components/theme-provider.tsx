@@ -17,6 +17,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('dark');
 
   useEffect(() => {
+    // Skip API call on auth pages to avoid 401 errors
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/auth')) {
+      const saved = localStorage.getItem('theme') as Theme;
+      if (saved) setThemeState(saved);
+      return;
+    }
+
     // Initial fetch from user settings
     api.get<User>('/users/profile')
       .then((user) => {

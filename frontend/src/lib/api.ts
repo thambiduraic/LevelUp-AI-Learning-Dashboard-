@@ -5,12 +5,12 @@ async function getHeaders(): Promise<HeadersInit> {
   const { createClient } = await import('./supabase/client');
   const supabase = createClient();
   
-  // getSession() returns the current session, but doesn't guarantee it's not expired.
   // getUser() is more reliable as it triggers a refresh if needed.
-  const { data: { session }, error } = await supabase.auth.getSession();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-  if (error) {
-    console.error('Error getting Supabase session:', error);
+  if (userError || sessionError) {
+    console.error('Error getting Supabase session:', userError || sessionError);
   }
 
   return {
@@ -28,7 +28,7 @@ export const api = {
     
     if (res.status === 401) {
       console.warn('Unauthorized request. Redirecting to login...');
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
         window.location.href = '/auth/login';
       }
     }
@@ -47,7 +47,7 @@ export const api = {
     
     if (res.status === 401) {
       console.warn('Unauthorized request. Redirecting to login...');
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
         window.location.href = '/auth/login';
       }
     }
@@ -66,7 +66,7 @@ export const api = {
     
     if (res.status === 401) {
       console.warn('Unauthorized request. Redirecting to login...');
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
         window.location.href = '/auth/login';
       }
     }

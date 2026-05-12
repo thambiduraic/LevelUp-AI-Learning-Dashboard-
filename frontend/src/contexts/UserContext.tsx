@@ -33,6 +33,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Skip on auth pages
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/auth')) {
+      setLoading(false);
+      return;
+    }
     refreshUser();
   }, [refreshUser]);
 
