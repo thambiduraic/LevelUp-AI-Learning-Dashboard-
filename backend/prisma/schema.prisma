@@ -30,32 +30,42 @@ model User {
 }
 
 model Quest {
-  id          String     @id @default(cuid())
+  id          String      @id @default(cuid())
   title       String
   description String
   xpReward    Int
-  difficulty  Difficulty @default(MEDIUM)
-  completed   Boolean    @default(false)
+  difficulty  Difficulty  @default(MEDIUM)
+  status      QuestStatus @default(AVAILABLE)
+  category    String?
+  duration    Int?        // Estimated duration in mins
+  instructions String?
+  objective   String?
+  resources   Json?       // array of { title, url }
+  startedAt   DateTime?
   completedAt DateTime?
-  resetDate   DateTime   @default(now())
-  createdAt   DateTime   @default(now())
+  resetDate   DateTime    @default(now())
+  createdAt   DateTime    @default(now())
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Skill {
-  id       String   @id @default(cuid())
-  name     String
-  category Category
-  progress Int      @default(0)
-  unlocked Boolean  @default(false)
-  xpRequired Int    @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  category       Category
+  progress       Int      @default(0)
+  unlocked       Boolean  @default(false)
+  xpRequired     Int      @default(0)
+  totalStudyTime Int      @default(0)
+  lastActivity   DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  modules        Module[]
 
   prerequisiteId String?
   prerequisite   Skill?   @relation("SkillPrerequisite", fields: [prerequisiteId], references: [id])
@@ -64,6 +74,26 @@ model Skill {
   @@unique([userId, name])
 }
 
+model Module {
+  id        String   @id @default(cuid())
+  title     String
+  order     Int
+  completed Boolean  @default(false)
+  xpReward  Int      @default(10)
+  skillId   String
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  lessons   Lesson[]
+}
+
+model Lesson {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  completed Boolean  @default(false)
+  xpReward  Int      @default(5)
+  moduleId  String
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
 
 model XPHistory {
   id        String   @id @default(cuid())
@@ -82,6 +112,13 @@ model AIInsight {
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum QuestStatus {
+  LOCKED
+  AVAILABLE
+  IN_PROGRESS
+  COMPLETED
 }
 
 enum Difficulty {

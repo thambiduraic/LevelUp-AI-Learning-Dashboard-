@@ -61,7 +61,7 @@ export default function SettingsPage() {
         setName(data.name);
         setEmail(data.email);
         if (data.settings) {
-          setSettings({ ...settings, ...data.settings });
+          setSettings(prev => ({ ...prev, ...data.settings }));
           if (data.settings.theme) setTheme(data.settings.theme);
         }
       } catch (err) {
@@ -71,7 +71,7 @@ export default function SettingsPage() {
       }
     };
     fetchUser();
-  }, []);
+  }, [setTheme]);
 
   const handleSave = async () => {
     setSaving(true);

@@ -21,16 +21,41 @@ export interface User {
   };
 }
 
+export type QuestStatus = 'LOCKED' | 'AVAILABLE' | 'IN_PROGRESS' | 'COMPLETED';
+
 export interface Quest {
   id: string;
   title: string;
   description: string;
   xpReward: number;
   difficulty: Difficulty;
-  completed: boolean;
+  status: QuestStatus;
+  category?: string;
+  duration?: number;
+  instructions?: string;
+  objective?: string;
+  resources?: any;
+  startedAt?: string;
   completedAt?: string;
   createdAt: string;
   userId: string;
+}
+
+export interface Lesson {
+  id: string;
+  title: string;
+  content?: string;
+  completed: boolean;
+  xpReward: number;
+}
+
+export interface Module {
+  id: string;
+  title: string;
+  order: number;
+  completed: boolean;
+  xpReward: number;
+  lessons: Lesson[];
 }
 
 export interface Skill {
@@ -40,10 +65,13 @@ export interface Skill {
   progress: number;
   unlocked: boolean;
   xpRequired: number;
+  totalStudyTime: number;
+  lastActivity?: string;
   prerequisiteId?: string;
   createdAt: string;
   updatedAt: string;
   userId: string;
+  modules?: Module[];
 }
 
 export interface XPHistory {

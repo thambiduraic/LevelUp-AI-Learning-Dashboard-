@@ -1,0 +1,13 @@
+{
+  "status": "init",
+  "executionArgs": {
+    "projectName": "LevelUp-Ai-OS",
+    "projectPath": "e:\\LevelUp-Ai-OS",
+    "testIds": [],
+    "additionalInstruction": "Test the /dashboard, /dashboard/quests, and /dashboard/skills routes. Report if they return 404 or if they render correctly. If 404, check if there's any redirect logic in the console.",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-7Cw3tLxps2alFliXY0RS0qYxO3SXgfLaGNGEp0o2JvXpVb6dmiCpZivRctTSw2oyDWMTSuJdYopKDuw7EbZ-mAVBMjedVcfEoHFXIvxLC52M0GWFxEjSeruIdkJlNSwVQho"
+    }
+  }
+}

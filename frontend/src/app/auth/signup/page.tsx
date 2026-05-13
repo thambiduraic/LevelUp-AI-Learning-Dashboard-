@@ -92,7 +92,7 @@ export default function SignupPage() {
         <div className="w-16 h-16 rounded-full bg-gradient-brand flex items-center justify-center mx-auto mb-4">
           <Rocket className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-2xl font-bold mb-2">You're all set! 🎉</h2>
+        <h2 className="text-2xl font-bold mb-2">You&apos;re all set! 🎉</h2>
         <p className="text-text-secondary">Redirecting to your dashboard...</p>
       </motion.div>
     );

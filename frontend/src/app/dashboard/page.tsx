@@ -25,12 +25,15 @@ const itemVariants = {
 };
 
 import { useUser } from '@/contexts/UserContext';
+import { QuestDetailModal } from '@/components/dashboard/QuestDetailModal';
 
 export default function DashboardPage() {
   const { user, refreshUser } = useUser();
   const [quests, setQuests] = useState<Quest[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -51,6 +54,17 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
+  const handleStartQuest = async (questId: string) => {
+    try {
+      const res = await api.patch<Quest>(`/quests/${questId}/start`);
+      setQuests(prev => prev.map(q => q.id === questId ? res : q));
+      if (selectedQuest?.id === questId) setSelectedQuest(res);
+      toast.success('Quest Started!');
+    } catch (err) {
+      toast.error('Failed to start quest');
+    }
+  };
+
   const handleCompleteQuest = async (questId: string) => {
     try {
       const res = await api.patch<{ quest: Quest; xp: { newLevel: number; leveledUp: boolean; amount: number } }>(`/quests/${questId}/complete`);
@@ -70,15 +84,18 @@ export default function DashboardPage() {
 
       // Global refresh
       await refreshUser();
-      // Local refresh for quests
-      const questData = await api.post<{ quests: Quest[] }>('/quests/seed', {});
-      setQuests(questData.quests.slice(0, 3));
+      setQuests(prev => prev.map(q => q.id === questId ? res.quest : q));
+      if (selectedQuest?.id === questId) setSelectedQuest(res.quest);
     } catch (err) {
       console.error('Failed to complete quest:', err);
       toast.error('Failed to complete quest');
     }
   };
 
+  const handleShowDetails = (quest: Quest) => {
+    setSelectedQuest(quest);
+    setIsModalOpen(true);
+  };
 
   if (loading) {
     return (
@@ -96,7 +113,7 @@ export default function DashboardPage() {
     );
   }
 
-  const completedToday = quests.filter(q => q.completed).length;
+  const completedToday = quests.filter(q => q.status === 'COMPLETED').length;
 
   return (
     <motion.div
@@ -221,7 +238,7 @@ export default function DashboardPage() {
           <div>
             <h2 className="font-bold text-text-primary flex items-center gap-2">
               <Target className="w-5 h-5 text-brand-blue" />
-              Today's Quests
+              Today&apos;s Quests
             </h2>
             <p className="text-text-muted text-sm mt-0.5">{completedToday} of {quests.length} completed</p>
           </div>
@@ -231,18 +248,33 @@ export default function DashboardPage() {
         </div>
 
         {quests.length > 0 ? (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {quests.map((quest) => (
-              <QuestCard key={quest.id} quest={quest} onComplete={handleCompleteQuest} />
+              <QuestCard 
+                key={quest.id} 
+                quest={quest} 
+                onStart={handleStartQuest}
+                onComplete={handleCompleteQuest} 
+                onDetails={handleShowDetails}
+              />
             ))}
           </div>
         ) : (
           <div className="text-center py-8 text-text-muted">
             <Target className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p>No quests yet. They'll appear once your account is set up.</p>
+            <p>No quests yet. They&apos;ll appear once your account is set up.</p>
           </div>
         )}
       </motion.div>
+
+      {/* Quest Detail Modal */}
+      <QuestDetailModal
+        quest={selectedQuest}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onStart={handleStartQuest}
+        onComplete={handleCompleteQuest}
+      />
 
       {/* Skill Overview */}
       <motion.div variants={itemVariants} className="glass-card p-6">

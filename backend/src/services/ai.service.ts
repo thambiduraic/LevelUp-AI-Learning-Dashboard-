@@ -8,7 +8,7 @@ interface UserContext {
   level: number;
   totalXP: number;
   streak: number;
-  recentQuests: Array<{ title: string; completed: boolean }>;
+  recentQuests: Array<{ title: string; status: string }>;
   skills: Array<{ name: string; category: string; progress: number }>;
 }
 
@@ -31,7 +31,7 @@ export const generateMentorFeedback = async (userId: string): Promise<string> =>
     level: user.level,
     totalXP: user.totalXP,
     streak: user.streak,
-    recentQuests: user.quests.map((q) => ({ title: q.title, completed: q.completed })),
+    recentQuests: user.quests.map((q) => ({ title: q.title, status: q.status })),
     skills: user.skills.map((s) => ({ name: s.name, category: s.category, progress: s.progress })),
   };
 

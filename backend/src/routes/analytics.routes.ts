@@ -11,7 +11,7 @@ router.get('/overview', async (req: AuthRequest, res: Response): Promise<void> =
     const [user, questStats, xpHistory] = await Promise.all([
       prisma.user.findUnique({ where: { id: req.userId } }),
       prisma.quest.groupBy({
-        by: ['completed'],
+        by: ['status'],
         where: { userId: req.userId },
         _count: true,
       }),
@@ -24,7 +24,7 @@ router.get('/overview', async (req: AuthRequest, res: Response): Promise<void> =
       }),
     ]);
 
-    const completed = questStats.find((q) => q.completed)?._count || 0;
+    const completed = questStats.find((q) => q.status === 'COMPLETED')?._count || 0;
     const total = questStats.reduce((acc, q) => acc + q._count, 0);
 
     // Group XP by day for the last 7 days
