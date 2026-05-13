@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Lock, CheckCircle } from 'lucide-react';
+import { Lock, CheckCircle, Zap, GitBranch } from 'lucide-react';
 import { cn, categoryLabel } from '@/lib/utils';
 import type { Skill } from '@/types';
 
@@ -73,11 +73,19 @@ export function SkillNode({ skill, index }: SkillNodeProps) {
         </div>
       </div>
 
-      {/* XP required */}
+      {/* XP required / Prerequisite */}
       {!skill.unlocked && (
-        <div className="text-xs text-text-muted flex items-center gap-1 mt-1">
-          <Lock className="w-3 h-3" />
-          Requires {skill.xpRequired} XP to unlock
+        <div className="mt-1 space-y-1">
+          <div className="text-[10px] text-text-muted flex items-center gap-1">
+            <Zap className="w-3 h-3 text-brand-blue" />
+            Requires {skill.xpRequired} XP
+          </div>
+          {skill.prerequisiteId && (
+            <div className="text-[10px] text-brand-purple/70 flex items-center gap-1">
+              <GitBranch className="w-3 h-3" />
+              Locked until previous skill is complete
+            </div>
+          )}
         </div>
       )}
 

@@ -40,6 +40,7 @@ export interface Skill {
   progress: number;
   unlocked: boolean;
   xpRequired: number;
+  prerequisiteId?: string;
   createdAt: string;
   updatedAt: string;
   userId: string;
@@ -66,5 +67,6 @@ export interface AnalyticsOverview {
   totalQuestsCompleted: number;
   totalQuests: number;
   weeklyXP: Array<{ date: string; xp: number }>;
+  activityHeatmap: Array<{ date: string; xp: number; count: number }>;
   recentXPHistory: XPHistory[];
 }

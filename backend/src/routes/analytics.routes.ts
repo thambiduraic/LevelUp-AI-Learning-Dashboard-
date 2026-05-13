@@ -16,9 +16,11 @@ router.get('/overview', async (req: AuthRequest, res: Response): Promise<void> =
         _count: true,
       }),
       prisma.xPHistory.findMany({
-        where: { userId: req.userId },
+        where: { 
+          userId: req.userId,
+          createdAt: { gte: new Date(new Date().setDate(new Date().getDate() - 30)) }
+        },
         orderBy: { createdAt: 'desc' },
-        take: 30,
       }),
     ]);
 
@@ -45,12 +47,34 @@ router.get('/overview', async (req: AuthRequest, res: Response): Promise<void> =
       };
     });
 
+    // Group XP by day for the last 30 days (for heatmap)
+    const last30Days = Array.from({ length: 30 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (29 - i));
+      date.setHours(0, 0, 0, 0);
+      return date;
+    });
+
+    const activityHeatmap = last30Days.map((day) => {
+      const nextDay = new Date(day);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const xpForDay = xpHistory
+        .filter((h) => h.createdAt >= day && h.createdAt < nextDay)
+        .reduce((acc, h) => acc + h.amount, 0);
+      return {
+        date: day.toISOString(),
+        xp: xpForDay,
+        count: xpHistory.filter((h) => h.createdAt >= day && h.createdAt < nextDay).length,
+      };
+    });
+
     res.json({
       user,
       questCompletionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
       totalQuestsCompleted: completed,
       totalQuests: total,
       weeklyXP,
+      activityHeatmap,
       recentXPHistory: xpHistory.slice(0, 10),
     });
   } catch (err) {

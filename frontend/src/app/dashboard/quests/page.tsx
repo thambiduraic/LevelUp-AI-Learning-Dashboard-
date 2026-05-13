@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Target, Zap, Filter, RefreshCw } from 'lucide-react';
 import { api } from '@/lib/api';
 import { QuestCard } from '@/components/dashboard/QuestCard';
+import { toast } from 'sonner';
 import type { Quest, User } from '@/types';
 
 type FilterType = 'ALL' | 'PENDING' | 'COMPLETED';
@@ -34,13 +35,32 @@ export default function QuestsPage() {
   useEffect(() => { fetchData(); }, []);
 
   const handleComplete = async (questId: string) => {
-    await api.patch(`/quests/${questId}/complete`);
-    const [questData, userData] = await Promise.all([
-      api.get<Quest[]>('/quests'),
-      api.get<User>('/users/profile'),
-    ]);
-    setQuests(questData);
-    setUser(userData);
+    try {
+      const res = await api.patch<{ quest: Quest; xp: { newLevel: number; leveledUp: boolean; amount: number } }>(`/quests/${questId}/complete`);
+      
+      toast.success(`Quest Completed! +${res.xp.amount} XP`, {
+        description: res.quest.title,
+        icon: <Zap className="w-4 h-4 text-brand-blue" />,
+      });
+
+      if (res.xp.leveledUp) {
+        toast('Level Up!', {
+          description: `You've reached Level ${res.xp.newLevel}! 🎉`,
+          duration: 5000,
+          style: { background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)', color: 'white', border: 'none' },
+        });
+      }
+
+      const [questData, userData] = await Promise.all([
+        api.get<Quest[]>('/quests'),
+        api.get<User>('/users/profile'),
+      ]);
+      setQuests(questData);
+      setUser(userData);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to complete quest');
+    }
   };
 
   const filteredQuests = quests.filter((q) => {

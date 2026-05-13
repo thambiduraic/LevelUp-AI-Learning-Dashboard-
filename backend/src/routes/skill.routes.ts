@@ -38,24 +38,24 @@ router.post('/seed', async (req: AuthRequest, res: Response): Promise<void> => {
   const defaultSkills = [
     // Frontend
     { name: 'HTML & CSS', category: 'FRONTEND' as const, progress: 0, unlocked: true, xpRequired: 0 },
-    { name: 'JavaScript', category: 'FRONTEND' as const, progress: 0, unlocked: false, xpRequired: 100 },
-    { name: 'React', category: 'FRONTEND' as const, progress: 0, unlocked: false, xpRequired: 250 },
-    { name: 'Next.js', category: 'FRONTEND' as const, progress: 0, unlocked: false, xpRequired: 500 },
+    { name: 'JavaScript', category: 'FRONTEND' as const, progress: 0, unlocked: false, xpRequired: 100, prerequisiteId: 'html-css' },
+    { name: 'React', category: 'FRONTEND' as const, progress: 0, unlocked: false, xpRequired: 250, prerequisiteId: 'javascript' },
+    { name: 'Next.js', category: 'FRONTEND' as const, progress: 0, unlocked: false, xpRequired: 500, prerequisiteId: 'react' },
     // Backend
     { name: 'Node.js', category: 'BACKEND' as const, progress: 0, unlocked: true, xpRequired: 0 },
-    { name: 'Express.js', category: 'BACKEND' as const, progress: 0, unlocked: false, xpRequired: 100 },
-    { name: 'Databases', category: 'BACKEND' as const, progress: 0, unlocked: false, xpRequired: 250 },
-    { name: 'REST APIs', category: 'BACKEND' as const, progress: 0, unlocked: false, xpRequired: 400 },
+    { name: 'Express.js', category: 'BACKEND' as const, progress: 0, unlocked: false, xpRequired: 100, prerequisiteId: 'node-js' },
+    { name: 'Databases', category: 'BACKEND' as const, progress: 0, unlocked: false, xpRequired: 250, prerequisiteId: 'express-js' },
+    { name: 'REST APIs', category: 'BACKEND' as const, progress: 0, unlocked: false, xpRequired: 400, prerequisiteId: 'express-js' },
     // AI/ML
     { name: 'Python Basics', category: 'AI_ML' as const, progress: 0, unlocked: true, xpRequired: 0 },
-    { name: 'ML Fundamentals', category: 'AI_ML' as const, progress: 0, unlocked: false, xpRequired: 200 },
-    { name: 'Deep Learning', category: 'AI_ML' as const, progress: 0, unlocked: false, xpRequired: 600 },
+    { name: 'ML Fundamentals', category: 'AI_ML' as const, progress: 0, unlocked: false, xpRequired: 200, prerequisiteId: 'python-basics' },
+    { name: 'Deep Learning', category: 'AI_ML' as const, progress: 0, unlocked: false, xpRequired: 600, prerequisiteId: 'ml-fundamentals' },
     // System Design
     { name: 'Architecture Basics', category: 'SYSTEM_DESIGN' as const, progress: 0, unlocked: false, xpRequired: 300 },
-    { name: 'Scalability', category: 'SYSTEM_DESIGN' as const, progress: 0, unlocked: false, xpRequired: 700 },
+    { name: 'Scalability', category: 'SYSTEM_DESIGN' as const, progress: 0, unlocked: false, xpRequired: 700, prerequisiteId: 'architecture-basics' },
     // Problem Solving
     { name: 'Data Structures', category: 'PROBLEM_SOLVING' as const, progress: 0, unlocked: true, xpRequired: 0 },
-    { name: 'Algorithms', category: 'PROBLEM_SOLVING' as const, progress: 0, unlocked: false, xpRequired: 150 },
+    { name: 'Algorithms', category: 'PROBLEM_SOLVING' as const, progress: 0, unlocked: false, xpRequired: 150, prerequisiteId: 'data-structures' },
   ];
 
   try {
@@ -83,18 +83,46 @@ router.post('/seed', async (req: AuthRequest, res: Response): Promise<void> => {
     const userForSeed = await prisma.user.findUnique({ where: { id: req.userId }, select: { totalXP: true } });
     const userXP = userForSeed?.totalXP || 0;
 
-    await prisma.skill.createMany({
-      data: defaultSkills.map((s) => ({ 
-        ...s, 
-        userId: req.userId!,
-        unlocked: s.unlocked || s.xpRequired <= userXP 
-      })),
-    });
+    // 1. Create all skills first
+    const createdSkills = [];
+    for (const s of defaultSkills) {
+      const skill = await prisma.skill.create({
+        data: {
+          name: s.name,
+          category: s.category,
+          progress: s.progress,
+          unlocked: s.unlocked || s.xpRequired <= userXP,
+          xpRequired: s.xpRequired,
+          userId: req.userId!,
+        },
+      });
+      createdSkills.push(skill);
+    }
+
+    // 2. Link prerequisites
+    for (const s of defaultSkills) {
+      if (s.prerequisiteId) {
+        const skill = createdSkills.find((cs) => cs.name === s.name);
+        const prereq = createdSkills.find((cs) => {
+           // Mapping name back to common slug/id
+           const slug = cs.name.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-').replace(/\.js/g, '-js').replace(/\//g, '-');
+           return slug === s.prerequisiteId;
+        });
+
+        if (skill && prereq) {
+          await prisma.skill.update({
+            where: { id: skill.id },
+            data: { prerequisiteId: prereq.id },
+          });
+        }
+      }
+    }
 
 
-    const skills = await prisma.skill.findMany({ where: { userId: req.userId! } });
+    const skills = await prisma.skill.findMany({ where: { userId: req.userId! }, orderBy: { xpRequired: 'asc' } });
     res.json({ skills, seeded: true });
   } catch (err) {
+    console.error('[POST /skills/seed]', err);
     res.status(500).json({ error: 'Failed to seed skills' });
   }
 });
@@ -118,6 +146,29 @@ router.patch('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
         ...(unlocked !== undefined && { unlocked }),
       },
     });
+
+    // If skill was just completed, check if we can unlock its dependents
+    if (progress !== undefined && progress >= 100) {
+      const user = await prisma.user.findUnique({ where: { id: req.userId }, select: { totalXP: true } });
+      const userXP = user?.totalXP || 0;
+
+      const dependents = await prisma.skill.findMany({
+        where: {
+          userId: req.userId,
+          prerequisiteId: updated.id,
+          unlocked: false,
+          xpRequired: { lte: userXP }
+        }
+      });
+
+      if (dependents.length > 0) {
+        await prisma.skill.updateMany({
+          where: { id: { in: dependents.map(d => d.id) } },
+          data: { unlocked: true }
+        });
+      }
+    }
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update skill' });

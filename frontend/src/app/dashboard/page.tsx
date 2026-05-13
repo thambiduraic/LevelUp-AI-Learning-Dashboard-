@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import { XPCard } from '@/components/dashboard/XPCard';
 import { QuestCard } from '@/components/dashboard/QuestCard';
 import { formatNumber } from '@/lib/utils';
+import { toast } from 'sonner';
 import type { User, Quest, AnalyticsOverview } from '@/types';
 
 const containerVariants = {
@@ -52,14 +53,29 @@ export default function DashboardPage() {
 
   const handleCompleteQuest = async (questId: string) => {
     try {
-      await api.patch(`/quests/${questId}/complete`);
+      const res = await api.patch<{ quest: Quest; xp: { newLevel: number; leveledUp: boolean; amount: number } }>(`/quests/${questId}/complete`);
+      
+      toast.success(`Quest Completed! +${res.xp.amount} XP`, {
+        description: res.quest.title,
+        icon: <Zap className="w-4 h-4 text-brand-blue" />,
+      });
+
+      if (res.xp.leveledUp) {
+        toast('Level Up!', {
+          description: `You've reached Level ${res.xp.newLevel}! 🎉`,
+          duration: 5000,
+          style: { background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)', color: 'white', border: 'none' },
+        });
+      }
+
       // Global refresh
       await refreshUser();
-      // Local refresh for quests (optional, could just refetch quests)
+      // Local refresh for quests
       const questData = await api.post<{ quests: Quest[] }>('/quests/seed', {});
       setQuests(questData.quests.slice(0, 3));
     } catch (err) {
       console.error('Failed to complete quest:', err);
+      toast.error('Failed to complete quest');
     }
   };
 

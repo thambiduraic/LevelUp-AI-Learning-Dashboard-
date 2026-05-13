@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { api } from '@/lib/api';
 import { formatNumber, timeAgo } from '@/lib/utils';
+import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap';
 import type { AnalyticsOverview } from '@/types';
 
 export default function AnalyticsPage() {
@@ -98,6 +99,11 @@ export default function AnalyticsPage() {
               <Bar dataKey="xp" fill="url(#barGrad)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* Activity Heatmap */}
+        <div className="glass-card p-6 lg:col-span-2">
+          <ActivityHeatmap data={data?.activityHeatmap || []} />
         </div>
 
         {/* Quest Stats */}

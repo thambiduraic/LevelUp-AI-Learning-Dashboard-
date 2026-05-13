@@ -57,6 +57,10 @@ model Skill {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  prerequisiteId String?
+  prerequisite   Skill?   @relation("SkillPrerequisite", fields: [prerequisiteId], references: [id])
+  dependents     Skill[]  @relation("SkillPrerequisite")
+
   @@unique([userId, name])
 }
 

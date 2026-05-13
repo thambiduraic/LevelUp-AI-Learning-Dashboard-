@@ -85,15 +85,25 @@ export const awardXP = async (
       data: { userId, amount, source },
     });
 
-    // 3. Auto-unlock skills based on new total XP
-    await tx.skill.updateMany({
+    // 3. Auto-unlock skills based on new total XP and prerequisites
+    const lockSkills = await tx.skill.findMany({
       where: {
         userId,
         unlocked: false,
         xpRequired: { lte: newTotalXP },
       },
-      data: { unlocked: true },
+      include: { prerequisite: true },
     });
+
+    for (const skill of lockSkills) {
+      // Unlock if no prereq OR prereq is complete
+      if (!skill.prerequisiteId || (skill.prerequisite && skill.prerequisite.progress >= 100)) {
+        await tx.skill.update({
+          where: { id: skill.id },
+          data: { unlocked: true },
+        });
+      }
+    }
   });
 
 
